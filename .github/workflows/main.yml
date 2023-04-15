@@ -1,0 +1,32 @@
+
+name: CI/CD counter app
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+#First we will see the application build or not , then we will deploy in EC2
+
+  Deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v2 
+      - name: Deploy in EC2
+        env:
+            PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY  }}
+            HOSTNAME : ${{ secrets.HOSTNAME  }}
+            USER_NAME : ${{ secrets.USER_NAME  }}
+            GIT_PERSONAL_ACCESS_TOKEN: ${{ secrets.GIT_PERSONAL_ACCESS_TOKEN }}
+            
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOSTNAME} '
+          cd frontend-app
+          git remote set-url origin https://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@github.com/itsrobinm/lovers-app.git
+          git checkout main
+          git fetch origin main && git reset --hard origin/main
+          cat docker-compose.yml
+          docker compose up -d --build
+          '
